@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,6 +21,14 @@ class Settings(BaseSettings):
 
     # Postgres
     database_url: str
+
+    # Schema exposure controls (comma-separated, case-sensitive on DB side).
+    # If allowlist is set, only these tables are exposed (in addition to denylist filtering).
+    schema_table_allowlist: Optional[str] = None
+    schema_table_denylist: Optional[str] = None
+
+    # In-memory schema cache TTL (seconds). Default: 5 minutes.
+    schema_cache_ttl_seconds: int = 300
 
 
 @lru_cache
