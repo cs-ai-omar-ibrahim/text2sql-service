@@ -1,10 +1,16 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # Resolve `.env` from the repo root (one level above `app/`) regardless of cwd.
+    model_config = SettingsConfigDict(
+        env_file=str(Path(__file__).resolve().parents[1] / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # Azure OpenAI
     azure_openai_endpoint: str
