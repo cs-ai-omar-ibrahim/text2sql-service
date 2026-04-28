@@ -29,7 +29,9 @@ uvicorn app.main:app --reload --port 8000
 - `GET /health`: basic health check
 - `GET /db/health`: checks DB connectivity (`SELECT 1`)
 - `GET /db/tables`: lists non-system tables (schema + table name)
-- `POST /chat`: sends a message to Azure OpenAI via LlamaIndex
+- `GET /db/schema`: schema snapshot + prompt material (cached with TTL)
+- `POST /text2sql`: generate SQL (Postgres, SELECT-only) and execute it
+- `POST /chat`: sends a message to Azure OpenAI
 
 Example:
 
@@ -37,8 +39,13 @@ Example:
 curl -sS http://localhost:8000/health
 curl -sS http://localhost:8000/db/health
 curl -sS http://localhost:8000/db/tables
+curl -sS http://localhost:8000/db/schema
 
 curl -sS http://localhost:8000/chat \
   -H 'content-type: application/json' \
   -d '{"message":"Say hello"}'
+
+curl -sS http://localhost:8000/text2sql \
+  -H 'content-type: application/json' \
+  -d '{"question":"Top 10 users by spend","limit":10}'
 ```

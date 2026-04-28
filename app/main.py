@@ -7,6 +7,7 @@ from pydantic_core import ValidationError
 from app.db import check_db, close_db_pool, init_db_pool, list_user_tables
 from app.llm import build_llm
 from app.schema_introspection import format_schema_prompt, get_schema_snapshot_cached
+from app.text2sql_agent import text_to_sql
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -51,6 +52,11 @@ def chat(req: ChatRequest) -> dict:
         ) from e
     resp = llm.complete(req.message)
     return {"text": str(resp)}
+
+
+class Text2SQLRequest(BaseModel):
+    question: str
+    limit: int = 100
 
 
 @app.get("/db/health")
@@ -102,3 +108,16 @@ def db_schema() -> dict:
         ],
         "prompt": format_schema_prompt(snapshot),
     }
+
+
+@app.post("/text2sql")
+def text2sql(req: Text2SQLRequest) -> dict:
+    ok, payload = get_schema_snapshot_cached()
+    if not ok:
+        raise HTTPException(status_code=503, detail=payload)
+    snapshot = payload["snapshot"]
+
+    ok2, out = text_to_sql(req.question, schema_snapshot=snapshot, limit=req.limit)
+    if not ok2:
+        raise HTTPException(status_code=400, detail=out)
+    return {"ok": True, **out}
