@@ -239,6 +239,44 @@ def get_schema_snapshot_cached() -> Tuple[bool, Dict[str, Any]]:
     return True, {"cached": False, "snapshot": snap}
 
 
+def get_db_schema_payload() -> Tuple[bool, Dict[str, Any]]:
+    """
+    Returns (ok, payload) in the same shape exposed by GET /db/schema.
+    """
+    ok, payload = get_schema_snapshot_cached()
+    if not ok:
+        return False, payload
+
+    snapshot = payload["snapshot"]
+    return True, {
+        "ok": True,
+        "cached": payload["cached"],
+        "generated_at_epoch_s": snapshot.generated_at_epoch_s,
+        "excluded_tables": snapshot.excluded_tables,
+        "tables": [
+            {
+                "schema": t.schema,
+                "name": t.name,
+                "description": t.description,
+                "columns": [
+                    {"name": c.name, "data_type": c.data_type, "is_nullable": c.is_nullable}
+                    for c in t.columns
+                ],
+            }
+            for t in snapshot.tables
+        ],
+        "foreign_keys": [
+            {
+                "constraint_name": fk.constraint_name,
+                "src": {"schema": fk.src_schema, "table": fk.src_table, "columns": fk.src_columns},
+                "dst": {"schema": fk.dst_schema, "table": fk.dst_table, "columns": fk.dst_columns},
+            }
+            for fk in snapshot.foreign_keys
+        ],
+        "prompt": format_schema_prompt(snapshot),
+    }
+
+
 def format_schema_prompt(snapshot: SchemaSnapshot) -> str:
     """
     Prompt material: tables+columns, FK relationships, and optional descriptions.
