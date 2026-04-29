@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import argparse
+import json
+from pathlib import Path
 from typing import Any, Dict, List
 
 from app.db import close_db_pool, init_db_pool
@@ -106,5 +109,39 @@ def get_schema_as_create_table_text() -> str:
         close_db_pool()
 
 
+def _cli_main() -> None:
+    parser = argparse.ArgumentParser(description="Dump database schema as DDL or JSON.")
+    parser.add_argument(
+        "-o",
+        "--output",
+        metavar="PATH",
+        help="Write to this file; if omitted, print to stdout.",
+    )
+    parser.add_argument(
+        "-f",
+        "--format",
+        choices=("ddl", "json"),
+        default="ddl",
+        help="Output format (default: ddl).",
+    )
+    args = parser.parse_args()
+
+    init_db_pool()
+    try:
+        ok, payload = get_db_schema_payload()
+        if not ok:
+            raise RuntimeError(f"Schema error: {payload}")
+        if args.format == "json":
+            text = json.dumps(payload, indent=2, ensure_ascii=False)
+        else:
+            text = schema_payload_to_create_table_text(payload)
+        if args.output:
+            Path(args.output).write_text(text, encoding="utf-8")
+        else:
+            print(text)
+    finally:
+        close_db_pool()
+
+
 if __name__ == "__main__":
-    print(get_schema_as_create_table_text())
+    _cli_main()
