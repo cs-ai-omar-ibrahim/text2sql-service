@@ -1,6 +1,6 @@
 # text2sql-service
 
-FastAPI service scaffolded with LlamaIndex + Azure OpenAI + env-based config.
+FastAPI service for sending natural language SQL queries to the [TMS](https://github.com/clearsky-ai/task-management) built with LlamaIndex + Azure OpenAI.
 
 ## Quickstart
 
@@ -47,5 +47,5 @@ curl -sS http://localhost:8000/chat \
 
 curl -sS http://localhost:8000/text2sql \
   -H 'content-type: application/json' \
-  -d '{"question":"Top 10 users by spend","limit":10}'
+  -d '{"question":"Show all task types that start with the word Send","limit":10}'
 ```
